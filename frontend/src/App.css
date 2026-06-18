@@ -1560,40 +1560,160 @@
   }
 }
 
-.composer-submit-btn {
-  min-height: 44px;
-  white-space: nowrap;
+/* Split grid layout for upper area */
+.upper-split-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.5fr;
+  gap: 24px;
+  min-height: 0;
+  flex: 1;
 }
 
-/* Columns in dual-pane layout */
-.dual-pane-col {
+.active-shortcut-panel {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  padding: 24px;
   min-height: 0;
 }
 
-.shortcuts-pane {
-  max-height: 480px;
+.preview-container-vertical {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  margin: 16px 0;
+  padding: 16px;
+  border-radius: var(--border-radius-md);
+  background: rgba(0, 0, 0, 0.15);
+  border: var(--glass-border);
+}
+
+.action-buttons-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-top: auto;
+}
+
+.btn-group-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.btn-group-vertical .button {
+  width: 100%;
 }
 
 .themes-pane {
   flex: 1;
+  min-height: 0;
 }
 
-.composer-common-apps {
+.themes-list-scrollable {
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+/* Horizontal Shortcuts Pane at Bottom */
+.horizontal-shortcuts-pane {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 12px;
+  padding: 20px;
+  flex-shrink: 0;
+  min-height: 180px;
 }
 
-.common-apps-label {
-  font-size: 10px;
+.pane-header-horizontal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+}
+
+.shortcuts-list-horizontal {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 12px 4px 8px;
+  margin-top: 10px;
+  flex: 1;
+}
+
+.shortcut-card-horizontal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border: var(--glass-border);
+  border-radius: var(--border-radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  width: 120px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.shortcut-card-horizontal:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+
+.shortcut-card-horizontal.active {
+  border-color: var(--accent);
+  background: rgba(0, 240, 255, 0.04);
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.15) inset;
+}
+
+.shortcut-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: var(--glass-border);
+  background: rgba(0, 0, 0, 0.3);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.shortcut-card-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+}
+
+.shortcut-card-icon span {
+  color: var(--text-primary);
   font-weight: 700;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  letter-spacing: 0.05em;
+  font-size: 13px;
+}
+
+.shortcut-card-meta {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.shortcut-card-meta strong {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
