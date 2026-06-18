@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Python cache & virtual environment
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Iconique cache and database (production app runs in APPDATA, but ignore any local ones)
+backend/cache/
+backend/backups/
+*.db
+*.log
+
+# Build files
+dist/
+build/
+frontend/dist/
+*.spec
+
+# IDEs & System files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Temporary test files
+backend/notepad.png
+backend/test_shortcuts.py
+C:/Users/sneha/.gemini/antigravity/scratch/
