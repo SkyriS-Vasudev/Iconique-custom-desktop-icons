@@ -64,9 +64,12 @@ Switch between light and dark themes from the sidebar. Both modes are designed f
 
 ### Option A: Run the Installer (Recommended)
 
-1. Download `IconiqueSetup-1.0.0.exe` from the [Releases](https://github.com/SkyriS-Vasudev/Iconique-custom-desktop-icons/releases) page
-2. Run the installer — it will guide you through setup
-3. Launch **Iconique** from your Start Menu or Desktop
+1. Download `IconiqueSetup-1.0.0.exe` from the [Releases](https://github.com/SkyriS-Vasudev/Iconique-custom-desktop-icons/releases) page.
+   OR
+  Clone the repository to your local machine.
+2. Navigate to the Installers Folder and click on IconiqueSetup-1.0.0
+3. Run the installer — it will guide you through setup
+4. Launch **Iconique** from your Start Menu or Desktop
 
 > [!NOTE]
 > The installer bundles everything (Python runtime, frontend, theme packs). No additional software is required.
