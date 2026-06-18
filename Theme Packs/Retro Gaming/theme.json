@@ -1,0 +1,14 @@
+{
+  "name": "Retro Gaming",
+  "author": "ArcadeHero",
+  "description": "8-bit inspired grid layouts and pixel styling.",
+  "category": "Retro",
+  "icons": {
+    "Google Chrome": "google_chrome.ico",
+    "Visual Studio Code": "visual_studio_code.ico",
+    "Microsoft Edge": "microsoft_edge.ico",
+    "Git Bash": "git_bash.ico",
+    "AutoCAD 2021 - English": "autocad_2021___english.ico",
+    "Roblox Player": "roblox_player.ico"
+  }
+}

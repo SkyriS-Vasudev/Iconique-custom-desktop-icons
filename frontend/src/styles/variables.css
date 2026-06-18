@@ -1,0 +1,92 @@
+/* Iconique Design System Variables */
+
+:root {
+  /* Common Fonts */
+  --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Borders & Shadows */
+  --border-radius-sm: 6px;
+  --border-radius-md: 12px;
+  --border-radius-lg: 20px;
+  --border-radius-round: 50%;
+}
+
+/* Dark Theme (Default) */
+[data-theme="dark"] {
+  --bg-app: #0e0e11;
+  --bg-sidebar: #131317;
+  --bg-card: #18181f;
+  --bg-card-hover: #21212a;
+  --bg-input: #1b1b22;
+  --bg-active: #282834;
+  --bg-modal: #18181f;
+  
+  --border-color: #292934;
+  --border-color-hover: #3e3e4f;
+  
+  --text-primary: #f5f5f7;
+  --text-secondary: #a1a1b5;
+  --text-muted: #62627a;
+  
+  --accent: #00f0ff;          /* Electric Cyan */
+  --accent-glow: rgba(0, 240, 255, 0.15);
+  --accent-secondary: #ff007f; /* Neon Magenta */
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 8px 16px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 12px var(--accent-glow);
+  
+  --scrollbar-track: #131317;
+  --scrollbar-thumb: #2d2d3a;
+  --scrollbar-thumb-hover: #3d3d4f;
+}
+
+/* Light Theme */
+[data-theme="light"] {
+  --bg-app: #f3f3f7;
+  --bg-sidebar: #eaeaf1;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f9f9fb;
+  --bg-input: #f0f0f5;
+  --bg-active: #e2e2ec;
+  --bg-modal: #ffffff;
+  
+  --border-color: #d1d1e0;
+  --border-color-hover: #b5b5cb;
+  
+  --text-primary: #12121a;
+  --text-secondary: #5a5a75;
+  --text-muted: #8e8ea8;
+  
+  --accent: #0078d4;          /* Modern Blue */
+  --accent-glow: rgba(0, 120, 212, 0.1);
+  --accent-secondary: #003b87;
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #d97706;
+  
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 8px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 16px 32px rgba(0, 0, 0, 0.12);
+  --shadow-glow: 0 0 12px var(--accent-glow);
+  
+  --scrollbar-track: #f3f3f7;
+  --scrollbar-thumb: #c8c8d8;
+  --scrollbar-thumb-hover: #adadb8;
+}
