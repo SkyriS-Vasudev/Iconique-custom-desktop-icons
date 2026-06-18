@@ -1376,6 +1376,7 @@
   flex-direction: column;
   gap: 12px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .theme-card-header {

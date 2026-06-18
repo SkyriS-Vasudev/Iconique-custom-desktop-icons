@@ -370,15 +370,78 @@ def restore_all_shortcuts():
     logger.info("Global restore completed successfully.")
     return True, f"All {restored_count} customized shortcuts restored to default."
 
+def extract_exe_icon_to_ico(exe_path):
+    """
+    Attempts to extract the native icon from an executable and save it as a .ico
+    file in the cache directory. Returns the .ico path on success, or None if the
+    exe has no extractable icon.
+    """
+    exe_path = os.path.normpath(exe_path)
+    if not os.path.exists(exe_path):
+        return None
+
+    cache_dir = get_cache_dir()
+    safe_name = "".join([c if c.isalnum() or c in ['-', '_'] else '_'
+                         for c in os.path.splitext(os.path.basename(exe_path))[0]])
+    ico_path = os.path.join(cache_dir, f"{safe_name}_native.ico")
+
+    ps_script = f"""
+    Add-Type -AssemblyName System.Drawing
+    try {{
+        $icon = [System.Drawing.Icon]::ExtractAssociatedIcon("{exe_path.replace('\\', '\\\\')}")
+        if ($icon -eq $null) {{
+            Write-Output "NO_ICON"
+        }} else {{
+            $fs = [System.IO.File]::Create("{ico_path.replace('\\', '\\\\')}")
+            $icon.Save($fs)
+            $fs.Close()
+            $icon.Dispose()
+            Write-Output "SUCCESS"
+        }}
+    }} catch {{
+        Write-Output "FAILED"
+    }}
+    """
+
+    success, stdout, _ = run_powershell(ps_script)
+    if success and "SUCCESS" in stdout and os.path.exists(ico_path):
+        logger.info(f"Extracted native icon from {exe_path} -> {ico_path}")
+        return ico_path
+
+    logger.info(f"No extractable icon in {exe_path}; will use dummy.")
+    return None
+
+
 def create_desktop_shortcut_and_modify(exe_path, app_name, custom_ico_path):
     """
     Creates a new desktop shortcut pointing to an executable, and applies the custom icon.
     Used when a user wants to customize an application that does not have a desktop shortcut.
+
+    Icon resolution order:
+      1. If the caller supplies a valid custom_ico_path, use that.
+      2. Try to extract the application's own native icon from the .exe.
+      3. Fall back to a dummy icon from the first available theme pack.
     """
     exe_path = os.path.normpath(exe_path)
-    
-    # Check if a custom icon path is provided. If not, scan the existing theme packs for a dummy icon.
-    if not custom_ico_path or not os.path.exists(custom_ico_path):
+
+    if not os.path.exists(exe_path):
+        return False, f"Target executable not found at: {exe_path}", None
+
+    # --- Icon resolution ---
+    # Step 1: caller-supplied icon?
+    if custom_ico_path and os.path.exists(custom_ico_path):
+        custom_ico_path = os.path.normpath(custom_ico_path)
+    else:
+        custom_ico_path = None
+
+    # Step 2: extract native icon from the exe
+    if not custom_ico_path:
+        native_ico = extract_exe_icon_to_ico(exe_path)
+        if native_ico:
+            custom_ico_path = native_ico
+
+    # Step 3: fall back to a theme pack dummy only as last resort
+    if not custom_ico_path:
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         themes_dir = os.path.join(base_dir, 'Theme Packs')
         dummy_found = False
@@ -393,15 +456,12 @@ def create_desktop_shortcut_and_modify(exe_path, app_name, custom_ico_path):
                             break
                 if dummy_found:
                     break
-        # Fallback to packaging/iconique.ico if still not found
+        # Ultimate fallback to packaging/iconique.ico
         if not custom_ico_path or not os.path.exists(custom_ico_path):
             custom_ico_path = os.path.join(base_dir, 'packaging', 'iconique.ico')
 
     custom_ico_path = os.path.normpath(custom_ico_path)
-    
-    if not os.path.exists(exe_path):
-        return False, f"Target executable not found at: {exe_path}", None
-        
+
     # Get user desktop directory
     ps_get_desktop = "[Environment]::GetFolderPath([Environment+SpecialFolder]::Desktop)"
     success, stdout, _ = run_powershell(ps_get_desktop)
