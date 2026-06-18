@@ -10,23 +10,47 @@ if (-not (Test-Path $versionFile)) {
 
 $versionMeta = Get-Content $versionFile -Raw | ConvertFrom-Json
 
-if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
-    throw "Python is required to build the installer."
+# Resolve Python path (prefer virtual environment)
+$pythonPath = "python"
+if (Test-Path ".venv") {
+    $pythonPath = ".venv\Scripts\python.exe"
+    Write-Host "Using virtual environment Python at: $pythonPath"
+} else {
+    if (-not (Get-Command python -ErrorAction SilentlyContinue)) {
+        throw "Python is required to build the installer."
+    }
 }
 
 if (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
     throw "Node.js/npm is required to build the frontend."
 }
 
+# Resolve Inno Setup Compiler path
+$isccPath = "iscc"
 if (-not (Get-Command iscc -ErrorAction SilentlyContinue)) {
-    throw "Inno Setup Compiler (iscc) is required to build the installer."
+    $commonPaths = @(
+        "$env:LOCALAPPDATA\Programs\Inno Setup 6\iscc.exe",
+        "C:\Program Files (x86)\Inno Setup 6\iscc.exe",
+        "C:\Program Files\Inno Setup 6\iscc.exe"
+    )
+    foreach ($p in $commonPaths) {
+        if (Test-Path $p) {
+            $isccPath = $p
+            break
+        }
+    }
 }
 
+if ($isccPath -eq "iscc" -and -not (Get-Command iscc -ErrorAction SilentlyContinue)) {
+    throw "Inno Setup Compiler (iscc) is required to build the installer."
+}
+Write-Host "Using Inno Setup compiler path: $isccPath"
+
 Write-Host "Generating application icon..."
-python packaging\generate_icon.py
+& $pythonPath packaging\generate_icon.py
 
 Write-Host "Generating version metadata..."
-python packaging\generate_version_info.py
+& $pythonPath packaging\generate_version_info.py
 
 Write-Host "Building frontend..."
 Push-Location frontend
@@ -38,7 +62,7 @@ try {
 }
 
 Write-Host "Building bundled application..."
-python -m PyInstaller Iconique.spec --noconfirm --clean
+& $pythonPath -m PyInstaller Iconique.spec --noconfirm --clean
 
 Write-Host "Building Windows installer..."
 $defines = @(
@@ -49,6 +73,7 @@ $defines = @(
     "/DMyAppSupportURL=$($versionMeta.support_url)",
     "/DMyAppUpdatesURL=$($versionMeta.updates_url)"
 )
-& iscc @defines packaging\iconique.iss
+& $isccPath @defines packaging\iconique.iss
 
 Write-Host "Installer finished. Check packaging\installer-output\ for the setup EXE."
+

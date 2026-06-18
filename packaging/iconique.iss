@@ -19,6 +19,7 @@
 #define MyAppExeName "Iconique.exe"
 
 [Setup]
+SourceDir=..
 AppId={{0D7F1E5C-3F17-4B16-8DBD-5F0D0459C13C}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
@@ -33,7 +34,7 @@ VersionInfoProductName={#MyAppName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
 DefaultDirName={autopf}\Iconique
 DefaultGroupName=Iconique
-OutputDir=installer-output
+OutputDir=packaging\installer-output
 OutputBaseFilename=IconiqueSetup-{#MyAppVersion}
 SetupIconFile=packaging\iconique.ico
 Compression=lzma2
@@ -45,7 +46,7 @@ PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=dialog
 
 [Tasks]
-Name: desktopicon; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"; Flags: unchecked
+Name: desktopicon; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"
 
 [Files]
 Source: "dist\Iconique\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
