@@ -2,9 +2,6 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import {
   ChevronRight,
   CircleAlert,
-  FolderInput,
-  ImagePlus,
-  Monitor,
   Moon,
   RefreshCw,
   Search,
@@ -12,7 +9,6 @@ import {
   SunMedium,
   Undo2,
   Upload,
-  X,
 } from 'lucide-react'
 import './App.css'
 import heroIcon from './assets/hero.png'
@@ -64,7 +60,7 @@ function App() {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   const [shortcuts, setShortcuts] = useState([])
   const [themes, setThemes] = useState([])
-  const [commonApps, setCommonApps] = useState([])
+  const [, setCommonApps] = useState([])
   const [selectedShortcutPath, setSelectedShortcutPath] = useState('')
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
@@ -86,10 +82,6 @@ function App() {
     const haystack = `${shortcut.name} ${shortcut.targetPath || ''} ${shortcut.path || ''}`.toLowerCase()
     return haystack.includes(search.toLowerCase())
   })
-
-  const selectedShortcutPreview = selectedShortcut?.iconCacheUrl
-    ? joinApiPath(apiBase, selectedShortcut.iconCacheUrl)
-    : ''
 
   const fetchJson = useCallback(async (path, options = {}) => {
     const response = await fetch(joinApiPath(apiBase, path), options)
@@ -310,29 +302,6 @@ function App() {
     await handleCustomIconUpload(file)
   }
 
-  async function handlePickExecutable() {
-    try {
-      if (window.pywebview?.api?.pick_executable) {
-        const pickedPath = await window.pywebview.api.pick_executable()
-        if (pickedPath) {
-          const fileName = pickedPath.split(/[\\/]/).pop() || 'Application'
-          const appName = fileName.replace(/\.exe$/i, '')
-          setShortcutForm((current) => ({
-            ...current,
-            exePath: pickedPath,
-            appName: current.appName || appName,
-          }))
-          flash(`Picked ${fileName}`, 'success')
-          return
-        }
-      }
-
-      flash('Desktop file picker is unavailable here. Paste the EXE path below.', 'info')
-    } catch (error) {
-      flash(error.message, 'error')
-    }
-  }
-
   async function createShortcut() {
     if (!shortcutForm.exePath || !shortcutForm.appName) {
       flash('Pick an application first.', 'error')
@@ -424,29 +393,9 @@ function App() {
     }
   }
 
-  async function applyThemeToSelected(theme) {
-    if (!selectedShortcut) {
-      flash('Select a shortcut before applying a theme icon.', 'error')
-      return
-    }
-
-    const themeIcon = theme.icons?.[selectedShortcut.name]
-    if (!themeIcon?.path) {
-      flash(`That theme does not include ${selectedShortcut.name}.`, 'error')
-      return
-    }
-
-    setPreview({
-      title: `${theme.name} · ${selectedShortcut.name}`,
-      icoPath: themeIcon.path,
-      iconUrl: themeIcon.url,
-      source: 'theme',
-    })
-  }
-
   function previewThemeEntry(theme, entry) {
     setPreview({
-      title: `${theme.name} · ${entry.label}`,
+      title: `${theme.name} - ${entry.label}`,
       icoPath: entry.path,
       iconUrl: entry.url,
       source: 'theme',
@@ -458,9 +407,6 @@ function App() {
     { label: 'Customized', value: shortcuts.filter((item) => item.backupExists).length },
     { label: 'Themes', value: themes.length },
   ]
-
-  const currentPreview = selectedShortcutPreview || ''
-  const pendingPreview = preview?.iconUrl || ''
 
   return (
     <div className="app-shell">
@@ -616,7 +562,7 @@ function App() {
             <div className="pane-header-compact">
               <div className="pane-title-group">
                 <h4>Theme packs</h4>
-                <span>Click any icon below to select it as the new icon</span>
+                <span>{themes.length} packs available</span>
               </div>
             </div>
 
@@ -628,7 +574,7 @@ function App() {
                       <h5>{theme.name}</h5>
                       <span className="theme-author-name">by {theme.author}</span>
                     </div>
-                    <span className="theme-category-tag">{theme.category}</span>
+                    <span className="theme-category-tag">{(theme.iconEntries || []).length} icons</span>
                   </div>
                   <p className="theme-card-desc">{theme.description}</p>
 
@@ -722,7 +668,7 @@ function App() {
           <div className="pane-header-compact">
             <div className="pane-title-group">
               <h4>Create desktop shortcut</h4>
-              <span>Choose an application from your library, select a theme icon from the list above, and create a shortcut</span>
+              <span>Application, name, and selected icon</span>
             </div>
           </div>
 
