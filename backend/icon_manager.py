@@ -4,7 +4,7 @@ import json
 import ctypes
 import shutil
 from backend.logging_config import logger
-from backend.database import add_backup, get_backup, delete_backup, get_all_backups, add_history_entry
+from backend.database import add_backup, get_backup, delete_backup, get_all_backups
 
 def get_cache_dir():
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -286,13 +286,7 @@ def apply_custom_icon(shortcut_path, custom_ico_path, action_type='applied_custo
     if not success:
         return False, f"Failed to modify shortcut properties: {stderr}"
         
-    # 4. Record history
-    add_history_entry(
-        shortcut_path=shortcut_path,
-        shortcut_name=shortcut_name,
-        action=action_type,
-        icon_path=custom_ico_path
-    )
+
     
     # 5. Refresh explorer
     refresh_explorer()
@@ -330,14 +324,7 @@ def restore_shortcut_icon(shortcut_path):
     if not success:
         return False, f"Failed to restore shortcut: {stderr}"
         
-    # Add history
-    shortcut_name = os.path.splitext(os.path.basename(shortcut_path))[0]
-    add_history_entry(
-        shortcut_path=shortcut_path,
-        shortcut_name=shortcut_name,
-        action='restored_original',
-        icon_path=None
-    )
+
     
     # Delete backup record
     delete_backup(shortcut_path)

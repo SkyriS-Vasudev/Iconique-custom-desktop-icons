@@ -33,6 +33,4 @@ frontend/dist/
 Thumbs.db
 
 # Temporary test files
-backend/notepad.png
-backend/test_shortcuts.py
-C:/Users/sneha/.gemini/antigravity/scratch/
+*.tmp

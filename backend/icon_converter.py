@@ -1,4 +1,6 @@
 import os
+import sys
+import shutil
 from PIL import Image
 from backend.logging_config import logger
 
@@ -126,3 +128,76 @@ def generate_preview(image_path, output_name=None, size=(256, 256)):
     except Exception as e:
         logger.error(f"Failed to generate preview PNG: {e}")
         raise RuntimeError(f"Error generating preview: {str(e)}")
+
+
+def _get_permanent_root():
+    """Return the permanent Iconique data directory under %APPDATA%."""
+    appdata = os.getenv('APPDATA')
+    if appdata:
+        root = os.path.join(appdata, 'Iconique')
+        os.makedirs(root, exist_ok=True)
+        return root
+    # Fallback: use the workspace backend directory
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+def _is_permanent(path):
+    """
+    Determine whether *path* already lives under a permanent, user-writable
+    location that will survive app restarts.
+
+    Paths inside PyInstaller's _MEIPASS temp directory, or inside the bundled
+    workspace 'Theme Packs' folder, are NOT permanent.
+    """
+    norm = os.path.normpath(path).lower()
+    permanent_root = os.path.normpath(_get_permanent_root()).lower()
+
+    if norm.startswith(permanent_root):
+        return True
+
+    # If running from a PyInstaller bundle, anything under _MEIPASS is temp
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        meipass = os.path.normpath(sys._MEIPASS).lower()
+        if norm.startswith(meipass):
+            return False
+
+    return True
+
+
+def ensure_permanent_ico(ico_path, theme_name=None):
+    """
+    Guarantee that *ico_path* points to a permanent location Windows can read
+    even after the application exits.
+
+    If the file is already inside the correct destination theme pack folder under
+    the permanent directory, it is returned as-is. Otherwise, it is copied to:
+      - Theme Packs/<theme_name>/ (defaulting theme_name to "Custom" if not provided)
+    """
+    ico_path = os.path.normpath(ico_path)
+
+    if not os.path.isfile(ico_path):
+        logger.warning(f"ensure_permanent_ico: source does not exist: {ico_path}")
+        return ico_path
+
+    if not theme_name:
+        theme_name = "Custom"
+
+    root = _get_permanent_root()
+    dest_dir = os.path.join(root, 'Theme Packs', theme_name)
+    os.makedirs(dest_dir, exist_ok=True)
+    dest_path = os.path.join(dest_dir, os.path.basename(ico_path))
+
+    # If the file is already at the destination, return it as-is
+    if os.path.normpath(ico_path).lower() == os.path.normpath(dest_path).lower():
+        logger.debug(f"ICO already at permanent destination: {ico_path}")
+        return ico_path
+
+    try:
+        shutil.copy2(ico_path, dest_path)
+        logger.info(f"Copied ICO to permanent custom theme folder: {dest_path}")
+        return dest_path
+    except Exception as e:
+        logger.error(f"Failed to copy ICO to permanent location: {e}")
+        return ico_path
+
+

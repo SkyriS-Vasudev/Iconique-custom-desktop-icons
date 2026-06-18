@@ -1,5 +1,5 @@
-import React, { useContext, useState } from 'react';
-import { SettingsContext } from '../context/SettingsContext';
+import { useContext, useState } from 'react';
+import { SettingsContext } from '../context/SettingsContext.js';
 
 const Settings = () => {
   const { settings, setSettings } = useContext(SettingsContext);

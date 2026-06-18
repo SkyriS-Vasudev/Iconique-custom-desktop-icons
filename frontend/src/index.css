@@ -1,95 +1,67 @@
-:root {
-  --bg-app: #0b1115;
-  --bg-sidebar: #0f161c;
-  --bg-card: #121b22;
-  --bg-card-hover: #17222a;
-  --bg-input: #0f171d;
-  --bg-modal: #10181f;
-  --border-color: #24313a;
-  --border-color-hover: #35505c;
-  --text-primary: #f3f8fb;
-  --text-secondary: #9eb2bb;
-  --text-muted: #6c808a;
-  --accent: #64f4ff;
-  --accent-secondary: #4dd0a8;
-  --success: #43d39e;
-  --danger: #ff6b6b;
-  --shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.18);
-  --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.24);
-  --shadow-lg: 0 22px 44px rgba(0, 0, 0, 0.34);
-  --shadow-glow: 0 0 0 1px rgba(100, 244, 255, 0.18), 0 0 28px rgba(100, 244, 255, 0.12);
-  color-scheme: dark;
-  font-family:
-    'Segoe UI',
-    'Aptos',
-    'Helvetica Neue',
-    Arial,
-    sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color: var(--text-primary);
-  background:
-    radial-gradient(circle at top left, rgba(20, 184, 166, 0.12), transparent 28%),
-    radial-gradient(circle at bottom right, rgba(96, 165, 250, 0.12), transparent 24%),
-    var(--bg-app);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-:root[data-theme='light'] {
-  --bg-app: #eef3f6;
-  --bg-sidebar: #f7fafc;
-  --bg-card: #ffffff;
-  --bg-card-hover: #f7fbfd;
-  --bg-input: #f1f6f9;
-  --bg-modal: #ffffff;
-  --border-color: #d7e0e6;
-  --border-color-hover: #b8c8d2;
-  --text-primary: #10212b;
-  --text-secondary: #56707b;
-  --text-muted: #7a8f98;
-  --accent: #006fbf;
-  --accent-secondary: #0aa37f;
-  --success: #11815e;
-  --danger: #d64545;
-  --shadow-sm: 0 8px 24px rgba(18, 33, 43, 0.08);
-  --shadow-md: 0 12px 30px rgba(18, 33, 43, 0.12);
-  --shadow-lg: 0 22px 44px rgba(18, 33, 43, 0.16);
-  --shadow-glow: 0 0 0 1px rgba(0, 111, 191, 0.1), 0 0 28px rgba(0, 111, 191, 0.12);
-  color-scheme: light;
-}
+@import './styles/variables.css';
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html,
 body,
 #root {
-  min-height: 100%;
+  width: 100%;
+  height: 100%;
   margin: 0;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
 }
 
 body {
-  min-height: 100vh;
-  background: var(--bg-app);
+  overflow-y: auto;
 }
 
 button,
-input {
-  font: inherit;
-}
-
-button {
-  appearance: none;
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  outline: none;
 }
 
 img {
   display: block;
+  max-width: 100%;
 }
 
 a {
   color: inherit;
+  text-decoration: none;
+}
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: 2px solid var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }

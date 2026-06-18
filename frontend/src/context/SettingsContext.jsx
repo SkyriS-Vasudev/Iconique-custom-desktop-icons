@@ -1,6 +1,5 @@
-import React, { createContext, useState, useEffect } from 'react';
-
-export const SettingsContext = createContext();
+import { useState, useEffect } from 'react';
+import { SettingsContext } from './SettingsContext.js';
 
 export const SettingsProvider = ({ children }) => {
   const [themeMode, setThemeMode] = useState('dark');

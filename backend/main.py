@@ -18,10 +18,9 @@ except ImportError:  # pragma: no cover - optional runtime dependency
 
 from backend.logging_config import logger
 from backend.database import (
-    init_db, get_setting, set_setting, get_history, 
-    add_history_entry, get_all_backups
+    init_db, get_setting, set_setting, get_all_backups
 )
-from backend.icon_converter import convert_to_ico, generate_preview, get_assets_dir
+from backend.icon_converter import convert_to_ico, generate_preview, get_assets_dir, ensure_permanent_ico
 from backend.icon_manager import (
     discover_shortcuts, apply_custom_icon, restore_shortcut_icon, 
     restore_all_shortcuts, create_desktop_shortcut_and_modify,
@@ -72,6 +71,24 @@ def get_resource_root():
     if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
         return sys._MEIPASS
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def _extract_theme_name(ico_path):
+    if not ico_path:
+        return None
+    ico_path = ico_path.replace('\\', '/')
+    parts = ico_path.split('/')
+    if 'Theme Packs' in parts:
+        try:
+            idx = parts.index('Theme Packs')
+            if idx + 1 < len(parts):
+                return parts[idx + 1]
+        except ValueError:
+            pass
+    parent_dir = os.path.basename(os.path.dirname(ico_path))
+    if parent_dir and parent_dir not in ['assets', 'cache', 'backups', 'temp', 'backend', 'Custom']:
+        return parent_dir
+    return "Custom"
 
 COMMON_APP_CANDIDATES = [
     {
@@ -188,6 +205,10 @@ def apply_shortcut_icon(
     action_type: str = Form("applied_custom")
 ):
     try:
+        # Ensure ICO is in a permanent location Windows can always access
+        theme_name = _extract_theme_name(ico_path)
+        ico_path = ensure_permanent_ico(ico_path, theme_name=theme_name)
+
         success, msg = apply_custom_icon(shortcut_path, ico_path, action_type)
         if not success:
             raise HTTPException(status_code=400, detail=msg)
@@ -225,6 +246,10 @@ def create_shortcut(
     ico_path: str = Form(...)
 ):
     try:
+        # Ensure ICO is in a permanent location Windows can always access
+        theme_name = _extract_theme_name(ico_path)
+        ico_path = ensure_permanent_ico(ico_path, theme_name=theme_name)
+
         success, msg = create_desktop_shortcut_and_modify(exe_path, app_name, ico_path)
         if not success:
             raise HTTPException(status_code=400, detail=msg)
@@ -312,13 +337,7 @@ def get_theme_asset(theme_name: str, filename: str):
             return FileResponse(path)
     raise HTTPException(status_code=404, detail="Theme asset not found.")
 
-@app.get("/api/history")
-def get_activity_history():
-    try:
-        return get_history(limit=100)
-    except Exception as e:
-        logger.error(f"Failed to get history: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/api/settings")
 def get_app_settings():

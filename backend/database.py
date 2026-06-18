@@ -111,53 +111,7 @@ def get_all_backups():
     finally:
         conn.close()
 
-# History CRUD
-def add_history_entry(shortcut_path, shortcut_name, action, icon_path=None):
-    conn = get_connection()
-    try:
-        conn.execute(
-            """
-            INSERT INTO history (shortcut_path, shortcut_name, action, icon_path, timestamp)
-            VALUES (?, ?, ?, ?, ?)
-            """,
-            (shortcut_path, shortcut_name, action, icon_path, datetime.now())
-        )
-        conn.commit()
-        logger.info(f"Recorded activity: {action} on {shortcut_name}")
-        return True
-    except Exception as e:
-        logger.error(f"Failed to add history entry for {shortcut_name}: {e}")
-        return False
-    finally:
-        conn.close()
 
-def get_history(limit=50):
-    conn = get_connection()
-    try:
-        rows = conn.execute(
-            "SELECT * FROM history ORDER BY timestamp DESC LIMIT ?",
-            (limit,)
-        ).fetchall()
-        return [dict(row) for row in rows]
-    except Exception as e:
-        logger.error(f"Failed to fetch history: {e}")
-        return []
-    finally:
-        conn.close()
-
-def get_history_for_shortcut(shortcut_path):
-    conn = get_connection()
-    try:
-        rows = conn.execute(
-            "SELECT * FROM history WHERE shortcut_path = ? ORDER BY timestamp DESC",
-            (shortcut_path,)
-        ).fetchall()
-        return [dict(row) for row in rows]
-    except Exception as e:
-        logger.error(f"Failed to fetch history for {shortcut_path}: {e}")
-        return []
-    finally:
-        conn.close()
 
 # Settings CRUD
 def get_setting(key, default=None):

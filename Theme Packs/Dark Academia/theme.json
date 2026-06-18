@@ -1,0 +1,14 @@
+{
+  "name": "Dark Academia",
+  "author": "OxfordScholar",
+  "description": "Rich mahogany tones, leather textures, and brass trims.",
+  "category": "Vintage",
+  "icons": {
+    "Google Chrome": "google_chrome.ico",
+    "Visual Studio Code": "visual_studio_code.ico",
+    "Microsoft Edge": "microsoft_edge.ico",
+    "Git Bash": "git_bash.ico",
+    "AutoCAD 2021 - English": "autocad_2021___english.ico",
+    "Roblox Player": "roblox_player.ico"
+  }
+}

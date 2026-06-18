@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import {
-  CheckCircle2,
   ChevronRight,
   CircleAlert,
   FolderInput,
@@ -9,7 +8,6 @@ import {
   Moon,
   RefreshCw,
   Search,
-  Settings2,
   Sparkles,
   SunMedium,
   Undo2,
@@ -57,19 +55,6 @@ function iconForShortcut(shortcut) {
     .toUpperCase()
 }
 
-function formatTimestamp(value) {
-  if (!value) {
-    return 'Just now'
-  }
-
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-
-  return date.toLocaleString()
-}
-
 function App() {
   const apiBase = useMemo(() => getApiBase(), [])
   const imageInputRef = useRef(null)
@@ -78,7 +63,6 @@ function App() {
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   const [shortcuts, setShortcuts] = useState([])
   const [themes, setThemes] = useState([])
-  const [history, setHistory] = useState([])
   const [commonApps, setCommonApps] = useState([])
   const [selectedShortcutPath, setSelectedShortcutPath] = useState('')
   const [search, setSearch] = useState('')
@@ -105,22 +89,22 @@ function App() {
     ? joinApiPath(apiBase, selectedShortcut.iconCacheUrl)
     : ''
 
-  async function fetchJson(path, options = {}) {
+  const fetchJson = useCallback(async (path, options = {}) => {
     const response = await fetch(joinApiPath(apiBase, path), options)
     if (!response.ok) {
       const detail = await response.text()
       throw new Error(detail || response.statusText)
     }
     return response.json()
-  }
+  }, [apiBase])
 
-  function flash(message, kind = 'info') {
+  const flash = useCallback((message, kind = 'info') => {
     setToast({ message, kind })
     window.clearTimeout(toastTimerRef.current)
     toastTimerRef.current = window.setTimeout(() => setToast(null), 3200)
-  }
+  }, [])
 
-  async function loadShortcuts() {
+  const loadShortcuts = useCallback(async () => {
     const data = await fetchJson('/api/shortcuts')
     setShortcuts(
       data.map((shortcut) => ({
@@ -132,53 +116,68 @@ function App() {
     if (!selectedShortcutPath && data.length > 0) {
       setSelectedShortcutPath(data[0].path)
     }
-  }
+  }, [fetchJson, apiBase, selectedShortcutPath])
 
-  async function loadThemes() {
+  const loadThemes = useCallback(async () => {
     const data = await fetchJson('/api/themes')
     setThemes(data)
-  }
+  }, [fetchJson])
 
-  async function loadHistory() {
-    const data = await fetchJson('/api/history')
-    setHistory(data)
-  }
-
-  async function loadSettings() {
-    const data = await fetchJson('/api/settings')
-    const next = {
-      themeMode: data.themeMode || 'dark',
-      backupLocation: data.backupLocation || 'appdata',
-      autoScanCommonApps: String(data.autoScanCommonApps).toLowerCase() === 'true',
-    }
-    setSettings(next)
-    document.documentElement.setAttribute('data-theme', next.themeMode)
-  }
-
-  async function loadCommonApps() {
+  const loadCommonApps = useCallback(async () => {
     try {
       const data = await fetchJson('/api/apps/common')
       setCommonApps(data.apps || [])
     } catch {
       setCommonApps([])
     }
-  }
-
-  async function bootstrap() {
-    try {
-      setLoading(true)
-      await loadSettings()
-      await Promise.all([loadShortcuts(), loadThemes(), loadHistory()])
-    } catch (error) {
-      flash(`Could not load Iconique data: ${error.message}`, 'error')
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [fetchJson])
 
   useEffect(() => {
-    bootstrap().catch((error) => flash(error.message, 'error'))
-  }, [])
+    let active = true
+    const bootstrap = async () => {
+      await Promise.resolve()
+      if (!active) return
+      try {
+        setLoading(true)
+        const data = await fetchJson('/api/settings')
+        const next = {
+          themeMode: data.themeMode || 'dark',
+          backupLocation: data.backupLocation || 'appdata',
+          autoScanCommonApps: String(data.autoScanCommonApps).toLowerCase() === 'true',
+        }
+        if (active) {
+          setSettings(next)
+          document.documentElement.setAttribute('data-theme', next.themeMode)
+        }
+        
+        const shortcutsData = await fetchJson('/api/shortcuts')
+        if (active) {
+          setShortcuts(
+            shortcutsData.map((shortcut) => ({
+              ...shortcut,
+              iconSrc: shortcut.iconCacheUrl ? joinApiPath(apiBase, shortcut.iconCacheUrl) : '',
+            })),
+          )
+          if (shortcutsData.length > 0) {
+            setSelectedShortcutPath(shortcutsData[0].path)
+          }
+        }
+
+        const themesData = await fetchJson('/api/themes')
+        if (active) {
+          setThemes(themesData)
+        }
+      } catch (error) {
+        if (active) flash(`Could not load Iconique data: ${error.message}`, 'error')
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+    bootstrap()
+    return () => {
+      active = false
+    }
+  }, [apiBase, fetchJson, flash])
 
   useEffect(() => {
     return () => window.clearTimeout(toastTimerRef.current)
@@ -189,12 +188,26 @@ function App() {
   }, [settings.themeMode])
 
   useEffect(() => {
-    if (settings.autoScanCommonApps) {
-      loadCommonApps().catch(() => setCommonApps([]))
-    } else {
-      setCommonApps([])
+    let active = true
+    const scan = async () => {
+      await Promise.resolve()
+      if (!active) return
+      if (settings.autoScanCommonApps) {
+        try {
+          const data = await fetchJson('/api/apps/common')
+          if (active) setCommonApps(data.apps || [])
+        } catch {
+          if (active) setCommonApps([])
+        }
+      } else {
+        if (active) setCommonApps([])
+      }
     }
-  }, [settings.autoScanCommonApps])
+    scan()
+    return () => {
+      active = false
+    }
+  }, [settings.autoScanCommonApps, fetchJson])
 
   async function persistSettings(partial) {
     const next = { ...settings, ...partial }
@@ -223,7 +236,7 @@ function App() {
   async function refreshData() {
     setBusy(true)
     try {
-      await Promise.all([loadShortcuts(), loadThemes(), loadHistory()])
+      await Promise.all([loadShortcuts(), loadThemes()])
       if (settings.autoScanCommonApps) {
         await loadCommonApps()
       }
@@ -426,7 +439,6 @@ function App() {
     { label: 'Shortcuts', value: shortcuts.length },
     { label: 'Customized', value: shortcuts.filter((item) => item.backupExists).length },
     { label: 'Themes', value: themes.length },
-    { label: 'Recent actions', value: history.length },
   ]
 
   const currentPreview = selectedShortcutPreview || ''
@@ -437,7 +449,12 @@ function App() {
       <aside className="sidebar">
         <div className="brand-block">
           <div className="brand-mark">
-            <Sparkles size={20} />
+            <svg width="22" height="22" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 2L30 9V23L16 30L2 23V9L16 2Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M16 8V24" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"/>
+              <path d="M11 11H21" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+              <path d="M11 21H21" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+            </svg>
           </div>
           <div>
             <div className="brand-title">Iconique</div>
@@ -780,36 +797,7 @@ function App() {
           </div>
         </section>
 
-        <section className="panel history-panel">
-          <div className="panel-header">
-            <div>
-              <h2>Recent activity</h2>
-              <p>What changed most recently.</p>
-            </div>
-          </div>
 
-          <div className="history-list">
-            {history.map((entry) => (
-              <div className="history-item" key={`${entry.id || entry.timestamp}-${entry.shortcut_path}`}>
-                <div className="history-left">
-                  <CheckCircle2 size={16} />
-                  <div>
-                    <strong>{entry.shortcut_name}</strong>
-                    <span>{entry.action}</span>
-                  </div>
-                </div>
-                <small>{formatTimestamp(entry.timestamp)}</small>
-              </div>
-            ))}
-
-            {!history.length && (
-              <div className="empty-state compact">
-                <CheckCircle2 size={20} />
-                <span>No icon changes yet.</span>
-              </div>
-            )}
-          </div>
-        </section>
       </main>
 
       {preview && selectedShortcut && (
