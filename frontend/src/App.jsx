@@ -511,7 +511,7 @@ function App() {
         </div>
       </aside>
 
-      <main className="workspace-fluid">
+      <main className="workspace">
         {/* Sleek Top Navbar */}
         <header className="navbar">
           <div className="navbar-welcome">
