@@ -422,11 +422,6 @@ function App() {
   }
 
   function previewThemeEntry(theme, entry) {
-    if (!selectedShortcut) {
-      flash('Select a shortcut before previewing a theme icon.', 'error')
-      return
-    }
-
     setPreview({
       title: `${theme.name} · ${entry.label}`,
       icoPath: entry.path,
@@ -442,14 +437,13 @@ function App() {
   ]
 
   const currentPreview = selectedShortcutPreview || ''
-  const pendingPreview = preview?.iconUrl || ''
-
-  return (
-    <div className="app-shell">
-      <aside className="sidebar">
+  const pendingPreview = preview?.iconUrl || ''  return (
+    <div className="app-shell no-sidebar">
+      {/* Sleek Top Navbar */}
+      <header className="navbar">
         <div className="brand-block">
           <div className="brand-mark">
-            <svg width="22" height="22" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="20" height="20" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M16 2L30 9V23L16 30L2 23V9L16 2Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M16 8V24" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"/>
               <path d="M11 11H21" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
@@ -458,388 +452,342 @@ function App() {
           </div>
           <div>
             <div className="brand-title">Iconique</div>
-            <div className="brand-subtitle">Custom desktop icons, minus the Windows ceremony</div>
+            <div className="brand-subtitle">Desktop personalization dashboard</div>
           </div>
         </div>
 
-        <div className="sidebar-group">
-          <div className="sidebar-heading">Appearance</div>
-          <div className="segmented-control">
-            <button
-              type="button"
-              className={settings.themeMode === 'dark' ? 'segmented active' : 'segmented'}
-              onClick={() => persistSettings({ themeMode: 'dark' })}
-            >
-              <Moon size={16} />
-              Dark
-            </button>
-            <button
-              type="button"
-              className={settings.themeMode === 'light' ? 'segmented active' : 'segmented'}
-              onClick={() => persistSettings({ themeMode: 'light' })}
-            >
-              <SunMedium size={16} />
-              Light
-            </button>
-          </div>
-        </div>
-
-        <div className="sidebar-group">
-          <div className="sidebar-heading">Backup storage</div>
-          <label className="radio-card">
-            <input
-              type="radio"
-              name="backupLocation"
-              checked={settings.backupLocation === 'appdata'}
-              onChange={() => persistSettings({ backupLocation: 'appdata' })}
-            />
-            <span>
-              <strong>APPDATA</strong>
-              <small>Recommended for normal use.</small>
-            </span>
-          </label>
-          <label className="radio-card">
-            <input
-              type="radio"
-              name="backupLocation"
-              checked={settings.backupLocation === 'workspace'}
-              onChange={() => persistSettings({ backupLocation: 'workspace' })}
-            />
-            <span>
-              <strong>Workspace</strong>
-              <small>Good for local testing and demos.</small>
-            </span>
-          </label>
-        </div>
-
-        <div className="sidebar-group">
-          <label className="toggle-row">
-            <div>
-              <strong>Auto-scan common apps</strong>
-              <small>Populate the shortcut picker with installed apps.</small>
-            </div>
+        <div className="navbar-controls">
+          <label className="toggle-row-compact">
+            <span>Auto-scan apps</span>
             <input
               type="checkbox"
               checked={settings.autoScanCommonApps}
               onChange={(event) => persistSettings({ autoScanCommonApps: event.target.checked })}
             />
           </label>
+
+          <div className="segmented-control-compact">
+            <button
+              type="button"
+              className={settings.themeMode === 'dark' ? 'segmented-compact active' : 'segmented-compact'}
+              onClick={() => persistSettings({ themeMode: 'dark' })}
+              aria-label="Dark theme"
+            >
+              <Moon size={14} />
+            </button>
+            <button
+              type="button"
+              className={settings.themeMode === 'light' ? 'segmented-compact active' : 'segmented-compact'}
+              onClick={() => persistSettings({ themeMode: 'light' })}
+              aria-label="Light theme"
+            >
+              <SunMedium size={14} />
+            </button>
+          </div>
+
+          <button type="button" className="button button-secondary button-compact" onClick={refreshData} disabled={busy}>
+            <RefreshCw size={14} className={busy ? 'spin' : ''} />
+            Refresh
+          </button>
         </div>
+      </header>
 
-        <button type="button" className="button button-secondary" onClick={refreshData} disabled={busy}>
-          <RefreshCw size={16} className={busy ? 'spin' : ''} />
-          Refresh data
-        </button>
-      </aside>
-
-      <main className="workspace">
-        <header className="hero">
-          <div>
-            <p className="eyebrow">PyWebView + FastAPI + React</p>
-            <h1>Iconique</h1>
-            <p className="hero-copy">
-              Find a shortcut, swap its icon, restore it later if needed, and keep the original path safely backed up
-              in one place.
-            </p>
-          </div>
-
-          <div className="hero-actions">
-            {stats.map((stat) => (
-              <div className="stat-card" key={stat.label}>
-                <span>{stat.label}</span>
-                <strong>{stat.value}</strong>
-              </div>
-            ))}
-          </div>
-        </header>
-
-        <section className="main-grid">
-          <section className="panel shortcuts-panel">
-            <div className="panel-header">
-              <div>
-                <h2>Desktop shortcuts</h2>
-                <p>Pick a shortcut, then apply a custom icon or a theme pack.</p>
-              </div>
-              <label className="search-field">
-                <Search size={16} />
-                <input
-                  type="search"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search shortcuts"
-                />
-              </label>
-            </div>
-
-            <div className="shortcut-grid">
-              {filteredShortcuts.map((shortcut) => (
-                <button
-                  type="button"
-                  key={shortcut.path}
-                  className={shortcut.path === selectedShortcutPath ? 'shortcut-card active' : 'shortcut-card'}
-                  onClick={() => selectShortcut(shortcut.path)}
-                >
-                  <div className="shortcut-icon-wrap">
-                    {shortcut.iconSrc ? (
-                      <img src={shortcut.iconSrc} alt="" />
-                    ) : (
-                      <span>{iconForShortcut(shortcut)}</span>
-                    )}
-                  </div>
-                  <div className="shortcut-copy">
-                    <strong>{shortcut.name}</strong>
-                    <span>{shortcut.targetPath || shortcut.path}</span>
-                    <small>{shortcut.backupExists ? 'Backup saved' : 'No backup yet'}</small>
-                  </div>
-                </button>
-              ))}
-
-              {!filteredShortcuts.length && (
-                <div className="empty-state">
-                  <CircleAlert size={24} />
-                  <span>No shortcuts match that search.</span>
-                </div>
+      <main className="workspace-fluid">
+        {/* Horizontal Dashboard - Selected Shortcut Info */}
+        <section className="dashboard-banner">
+          {/* Column 1: Active Shortcut Selection */}
+          <div className="dashboard-section active-shortcut-section">
+            <div className="section-meta">
+              <span className="section-eyebrow">Active Selection</span>
+              <h3>{selectedShortcut ? selectedShortcut.name : 'No shortcut selected'}</h3>
+              {selectedShortcut && (
+                <p className="shortcut-path-text" title={selectedShortcut.targetPath || selectedShortcut.path}>
+                  {selectedShortcut.targetPath || selectedShortcut.path}
+                </p>
               )}
             </div>
-          </section>
 
-          <aside className="panel action-panel">
-            <div className="panel-header">
-              <div>
-                <h2>Selected shortcut</h2>
-                <p>{selectedShortcut ? selectedShortcut.name : 'Choose one shortcut from the list.'}</p>
-              </div>
-            </div>
-
-            <div className="preview-card">
-              <div className="preview-box">
-                <span className="preview-label">Current</span>
-                <div className="preview-icon">
-                  {currentPreview ? <img src={currentPreview} alt="" /> : <span>{iconForShortcut(selectedShortcut)}</span>}
-                </div>
-              </div>
-              <ChevronRight className="preview-arrow" size={24} />
-              <div className="preview-box">
-                <span className="preview-label">New</span>
-                <div className="preview-icon preview-draft">
-                  {pendingPreview ? <img src={pendingPreview} alt="" /> : <span>?</span>}
-                </div>
-              </div>
-            </div>
-
-            <div className="action-row">
-              <button type="button" className="button button-primary" onClick={() => imageInputRef.current?.click()}>
-                <Upload size={16} />
-                Upload image
+            <div className="shortcut-meta-actions">
+              <button 
+                type="button" 
+                className="button button-secondary btn-sm" 
+                onClick={restoreSelectedShortcut} 
+                disabled={!selectedShortcut || !selectedShortcut.backupExists || busy}
+              >
+                <Undo2 size={14} />
+                Restore default icon
               </button>
-              <button type="button" className="button button-secondary" onClick={restoreSelectedShortcut}>
-                <Undo2 size={16} />
-                Restore
-              </button>
-            </div>
-
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden-input"
-              onChange={handlePickImage}
-            />
-
-            <div className="composer">
-              <div className="composer-title">
-                <FolderInput size={16} />
-                Create a shortcut for an EXE
-              </div>
-              <div className="field-group">
-                <label>Executable path</label>
-                <div className="inline-fields">
-                  <input
-                    type="text"
-                    value={shortcutForm.exePath}
-                    onChange={(event) => setShortcutForm((current) => ({ ...current, exePath: event.target.value }))}
-                    placeholder="Paste the full path or use Browse"
-                  />
-                  <button type="button" className="button button-secondary" onClick={handlePickExecutable}>
-                    Browse
-                  </button>
-                </div>
-              </div>
-
-              <div className="field-group">
-                <label>Application name</label>
-                <input
-                  type="text"
-                  value={shortcutForm.appName}
-                  onChange={(event) => setShortcutForm((current) => ({ ...current, appName: event.target.value }))}
-                  placeholder="Example App"
-                />
-              </div>
-
-              <div className="field-group">
-                <label>Custom icon</label>
-                <div className="inline-fields">
-                  <input
-                    type="text"
-                    value={shortcutForm.iconLabel}
-                    readOnly
-                    placeholder="Upload an image to convert to ICO"
-                  />
-                  <button
-                    type="button"
-                    className="button button-secondary"
-                    onClick={() => imageInputRef.current?.click()}
-                  >
-                    <ImagePlus size={16} />
-                    Choose
-                  </button>
-                </div>
-              </div>
-
-              <button type="button" className="button button-primary full-width" onClick={createShortcut}>
-                <Sparkles size={16} />
-                Create desktop shortcut
-              </button>
-            </div>
-
-            {commonApps.length > 0 && (
-              <div className="common-apps">
-                <div className="panel-subtitle">Common apps found on this machine</div>
-                <div className="chip-grid">
-                  {commonApps.map((app) => (
-                    <button
-                      key={app.path}
-                      type="button"
-                      className="chip"
-                      onClick={() =>
-                        setShortcutForm((current) => ({
-                          ...current,
-                          exePath: app.path,
-                          appName: app.name,
-                        }))
-                      }
-                    >
-                      <Monitor size={14} />
-                      {app.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </aside>
-        </section>
-
-        <section className="panel themes-panel">
-          <div className="panel-header">
-            <div>
-              <h2>Theme packs</h2>
-              <p>Apply a curated look to the selected shortcut when the theme includes that app.</p>
             </div>
           </div>
 
-          <div className="theme-grid">
-            {themes.map((theme) => {
-              const match = selectedShortcut ? theme.icons?.[selectedShortcut.name] : null
-              const previewItems = (theme.iconEntries || []).slice(0, 4)
+          {/* Column 2: New Icon Preview & Apply Actions */}
+          <div className="dashboard-section preview-section">
+            <div className="preview-container">
+              <div className="preview-item">
+                <span className="preview-tag">Current</span>
+                <div className="icon-frame">
+                  {selectedShortcut?.iconSrc ? (
+                    <img src={selectedShortcut.iconSrc} alt="Current" />
+                  ) : (
+                    <span>{selectedShortcut ? iconForShortcut(selectedShortcut) : '?'}</span>
+                  )}
+                </div>
+              </div>
+              <ChevronRight className="preview-arrow-compact" size={18} />
+              <div className="preview-item">
+                <span className="preview-tag">New</span>
+                <div className="icon-frame preview-draft">
+                  {preview?.iconUrl ? (
+                    <img src={preview.iconUrl} alt="New" />
+                  ) : (
+                    <span>?</span>
+                  )}
+                </div>
+              </div>
+            </div>
 
-              return (
-                <article className="theme-card" key={theme.id}>
-                  <div className="theme-top">
-                    <div>
-                      <strong>{theme.name}</strong>
-                      <span>{theme.author}</span>
+            <div className="apply-actions">
+              {preview && (
+                <span className="pending-source-label" title={preview.title}>
+                  Selected: {preview.title}
+                </span>
+              )}
+              <div className="btn-group-horizontal">
+                <button 
+                  type="button" 
+                  className="button button-secondary" 
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={!selectedShortcut || busy}
+                >
+                  <Upload size={14} />
+                  Upload Custom Image
+                </button>
+                <button 
+                  type="button" 
+                  className="button button-primary" 
+                  onClick={applyPreview}
+                  disabled={!selectedShortcut || !preview || busy}
+                >
+                  <Sparkles size={14} />
+                  Apply new icon
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Dual-Pane Customizer Grid */}
+        <section className="dual-pane-grid">
+          {/* Left Column: Shortcuts list and Composer */}
+          <div className="dual-pane-col">
+            <section className="pane-card shortcuts-pane">
+              <div className="pane-header-compact">
+                <div className="pane-title-group">
+                  <h4>Desktop shortcuts</h4>
+                  <span>Choose a shortcut to customize</span>
+                </div>
+                <label className="search-field-compact">
+                  <Search size={14} />
+                  <input
+                    type="search"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search shortcuts..."
+                  />
+                </label>
+              </div>
+
+              <div className="shortcuts-list-scrollable">
+                {filteredShortcuts.map((shortcut) => (
+                  <button
+                    type="button"
+                    key={shortcut.path}
+                    className={shortcut.path === selectedShortcutPath ? 'shortcut-row active' : 'shortcut-row'}
+                    onClick={() => selectShortcut(shortcut.path)}
+                  >
+                    <div className="shortcut-row-icon">
+                      {shortcut.iconSrc ? (
+                        <img src={shortcut.iconSrc} alt="" />
+                      ) : (
+                        <span>{iconForShortcut(shortcut)}</span>
+                      )}
                     </div>
-                    <small>{theme.category}</small>
-                  </div>
-                  <p>{theme.description}</p>
+                    <div className="shortcut-row-meta">
+                      <strong>{shortcut.name}</strong>
+                      <span title={shortcut.targetPath || shortcut.path}>
+                        {shortcut.targetPath || shortcut.path}
+                      </span>
+                      <small className={shortcut.backupExists ? "shortcut-status-text customized" : "shortcut-status-text"}>
+                        {shortcut.backupExists ? 'Backup saved' : 'No change in icon'}
+                      </small>
+                    </div>
+                  </button>
+                ))}
 
-                  <div className="theme-preview-row">
-                    {previewItems.map((icon) => (
+                {!filteredShortcuts.length && (
+                  <div className="empty-state-compact">
+                    <CircleAlert size={20} />
+                    <span>No shortcuts found.</span>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Create Desktop Shortcut Composer */}
+            <section className="panel composer-panel">
+              <div className="composer-title-compact">
+                <FolderInput size={16} />
+                <h4>Create Desktop Shortcut</h4>
+                <span className="composer-subtitle-text">Create a new desktop shortcut for any executable and customize its icon</span>
+              </div>
+
+              <div className="composer-form-horizontal-row">
+                <div className="field-group">
+                  <label>Executable Path</label>
+                  <div className="inline-fields">
+                    <input
+                      type="text"
+                      value={shortcutForm.exePath}
+                      onChange={(event) => setShortcutForm((current) => ({ ...current, exePath: event.target.value }))}
+                      placeholder="e.g. C:\Program Files\App\app.exe"
+                    />
+                    <button type="button" className="button button-secondary button-compact" onClick={handlePickExecutable}>
+                      Browse
+                    </button>
+                  </div>
+                </div>
+
+                <div className="field-group">
+                  <label>Application Name</label>
+                  <input
+                    type="text"
+                    value={shortcutForm.appName}
+                    onChange={(event) => setShortcutForm((current) => ({ ...current, appName: event.target.value }))}
+                    placeholder="e.g. My App"
+                  />
+                </div>
+
+                <div className="field-group">
+                  <label>Custom Icon</label>
+                  <div className="inline-fields">
+                    <input
+                      type="text"
+                      value={shortcutForm.iconLabel}
+                      readOnly
+                      placeholder="Upload or choose icon"
+                    />
+                    <button
+                      type="button"
+                      className="button button-secondary button-compact"
+                      onClick={() => imageInputRef.current?.click()}
+                    >
+                      <ImagePlus size={14} />
+                      Choose
+                    </button>
+                  </div>
+                </div>
+
+                <button type="button" className="button button-primary composer-submit-btn" onClick={createShortcut}>
+                  <Sparkles size={14} />
+                  Create Shortcut
+                </button>
+              </div>
+
+              {commonApps.length > 0 && (
+                <div className="composer-common-apps">
+                  <span className="common-apps-label">Common apps found on your PC:</span>
+                  <div className="chip-grid-compact">
+                    {commonApps.map((app) => (
                       <button
+                        key={app.path}
                         type="button"
-                        className="theme-preview-icon theme-preview-button"
-                        key={`${theme.id}-${icon.filename}`}
-                        title={icon.label}
-                        onClick={() => previewThemeEntry(theme, icon)}
+                        className="chip chip-compact"
+                        title={app.path}
+                        onClick={() =>
+                          setShortcutForm((current) => ({
+                            ...current,
+                            exePath: app.path,
+                            appName: app.name,
+                          }))
+                        }
                       >
-                        {icon?.url ? <img src={icon.url} alt="" /> : <span>{iconForShortcut({ name: icon.label })}</span>}
+                        <Monitor size={12} />
+                        {app.name}
                       </button>
                     ))}
                   </div>
+                </div>
+              )}
+            </section>
+          </div>
 
-                  {!!theme.iconEntries?.length && (
-                    <div className="theme-icon-list">
-                      {theme.iconEntries.map((icon) => (
-                        <button
-                          type="button"
-                          key={`${theme.id}-pick-${icon.filename}`}
-                          className="chip"
-                          onClick={() => previewThemeEntry(theme, icon)}
-                        >
-                          {icon.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+          {/* Right Column: Theme Packs Browsing */}
+          <div className="dual-pane-col">
+            <section className="pane-card themes-pane">
+              <div className="pane-header-compact">
+                <div className="pane-title-group">
+                  <h4>Theme packs</h4>
+                  <span>Click any icon below to select it as the new icon</span>
+                </div>
+              </div>
 
-                  <button
-                    type="button"
-                    className="button button-secondary full-width"
-                    onClick={() => applyThemeToSelected(theme)}
-                    disabled={!match}
-                  >
-                    <Sparkles size={16} />
-                    {match ? 'Preview selected shortcut' : 'Theme has no match'}
-                  </button>
-                </article>
-              )
-            })}
+              <div className="themes-list-scrollable">
+                {themes.map((theme) => {
+                  return (
+                    <article className="theme-section-card" key={theme.id}>
+                      <div className="theme-card-header">
+                        <div>
+                          <h5>{theme.name}</h5>
+                          <span className="theme-author-name">by {theme.author}</span>
+                        </div>
+                        <span className="theme-category-tag">{theme.category}</span>
+                      </div>
+                      <p className="theme-card-desc">{theme.description}</p>
+
+                      <div className="theme-icons-grid-scroll">
+                        {(theme.iconEntries || []).map((icon) => {
+                          const isSelected = preview?.icoPath === icon.path
+                          return (
+                            <button
+                              type="button"
+                              className={isSelected ? 'theme-icon-btn active' : 'theme-icon-btn'}
+                              key={`${theme.id}-${icon.filename}`}
+                              title={icon.label}
+                              onClick={() => previewThemeEntry(theme, icon)}
+                            >
+                              {icon?.url ? (
+                                <img src={icon.url} alt={icon.label} />
+                              ) : (
+                                <span>{iconForShortcut({ name: icon.label })}</span>
+                              )}
+                              <span className="theme-icon-btn-label">{icon.label}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </article>
+                  )
+                })}
+
+                {!themes.length && (
+                  <div className="empty-state-compact">
+                    <CircleAlert size={20} />
+                    <span>No theme packs loaded.</span>
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
         </section>
-
-
       </main>
 
-      {preview && selectedShortcut && (
-        <div className="modal-overlay" onClick={() => setPreview(null)} role="presentation">
-          <div className="modal-card" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
-            <div className="modal-header">
-              <div>
-                <strong>Preview changes</strong>
-                <p>{preview.title}</p>
-              </div>
-              <button type="button" className="icon-button" onClick={() => setPreview(null)} aria-label="Close preview">
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="preview-stage">
-              <div className="preview-box">
-                <span className="preview-label">Current icon</span>
-                <div className="preview-icon large">
-                  {currentPreview ? <img src={currentPreview} alt="" /> : <span>{iconForShortcut(selectedShortcut)}</span>}
-                </div>
-              </div>
-              <ChevronRight className="preview-arrow" size={24} />
-              <div className="preview-box">
-                <span className="preview-label">New icon</span>
-                <div className="preview-icon large preview-draft">
-                  {pendingPreview ? <img src={pendingPreview} alt="" /> : <span>?</span>}
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-actions">
-              <button type="button" className="button button-secondary" onClick={() => setPreview(null)}>
-                Cancel
-              </button>
-              <button type="button" className="button button-primary" onClick={applyPreview}>
-                Apply now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*,.ico"
+        className="hidden-input"
+        onChange={handlePickImage}
+      />
 
       {toast && (
         <div className={`toast toast-${toast.kind}`}>
@@ -849,7 +797,7 @@ function App() {
 
       {loading && (
         <div className="loading-overlay">
-          <RefreshCw size={18} className="spin" />
+          <RefreshCw size={24} className="spin" />
           <span>Loading Iconique...</span>
         </div>
       )}

@@ -24,7 +24,7 @@ def get_assets_dir():
 def validate_image(file_path):
     """
     Validates if the file is a valid image and is a supported format.
-    Supported formats: PNG, JPG, JPEG, WEBP.
+    Supported formats: PNG, JPG, JPEG, WEBP, ICO.
     """
     if not os.path.exists(file_path):
         logger.error(f"Image validation failed: file does not exist at {file_path}")
@@ -32,9 +32,9 @@ def validate_image(file_path):
         
     # Check extension
     _, ext = os.path.splitext(file_path.lower())
-    if ext not in ['.png', '.jpg', '.jpeg', '.webp']:
+    if ext not in ['.png', '.jpg', '.jpeg', '.webp', '.ico']:
         logger.error(f"Image validation failed: unsupported extension {ext}")
-        return False, f"Unsupported image format '{ext}'. Only PNG, JPG, JPEG, and WEBP are supported."
+        return False, f"Unsupported image format '{ext}'. Only PNG, JPG, JPEG, WEBP, and ICO are supported."
         
     try:
         with Image.open(file_path) as img:
@@ -48,6 +48,7 @@ def validate_image(file_path):
 def convert_to_ico(image_path, output_name=None):
     """
     Converts a PNG, JPG, or WEBP image into a standard multi-resolution Windows ICO file.
+    If the file is already an ICO, it copies it directly.
     Saves in the Iconique APPDATA assets folder.
     """
     is_valid, msg = validate_image(image_path)
@@ -55,6 +56,8 @@ def convert_to_ico(image_path, output_name=None):
         raise ValueError(msg)
         
     assets_dir = get_assets_dir()
+    _, ext = os.path.splitext(image_path.lower())
+    
     if not output_name:
         base_name = os.path.basename(image_path)
         name_part, _ = os.path.splitext(base_name)
@@ -64,9 +67,18 @@ def convert_to_ico(image_path, output_name=None):
         
     output_path = os.path.join(assets_dir, output_name)
     
+    if ext == '.ico':
+        try:
+            shutil.copy2(image_path, output_path)
+            logger.info(f"ICO file copied directly to assets: {output_path}")
+            return output_path
+        except Exception as e:
+            logger.error(f"Failed to copy ICO file: {e}")
+            raise RuntimeError(f"Error copying ICO file: {str(e)}")
+    
     try:
         with Image.open(image_path) as img:
-            # Ensure it is in RGBA mode to preserve transparency (especially for WEBP/PNG)
+            # Ensure it is in RGBA mode to preserve transparency
             if img.mode != 'RGBA':
                 img = img.convert('RGBA')
                 
@@ -83,7 +95,7 @@ def convert_to_ico(image_path, output_name=None):
 
 def generate_preview(image_path, output_name=None, size=(256, 256)):
     """
-    Generates a resized PNG preview from any supported input image.
+    Generates a resized PNG preview from any supported input image (including ICO).
     Used for showing previews before applying a theme or custom upload.
     """
     is_valid, msg = validate_image(image_path)
@@ -102,6 +114,10 @@ def generate_preview(image_path, output_name=None, size=(256, 256)):
     
     try:
         with Image.open(image_path) as img:
+            # Ensure it is in RGBA mode to preserve transparency
+            if img.mode != 'RGBA':
+                img = img.convert('RGBA')
+                
             # Resize keeping aspect ratio or just pad it to a square
             img_ratio = img.width / img.height
             

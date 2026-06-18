@@ -75,5 +75,5 @@ $defines = @(
 )
 & $isccPath @defines packaging\iconique.iss
 
-Write-Host "Installer finished. Check packaging\installer-output\ for the setup EXE."
+Write-Host "Installer finished. Check Installers\ for the setup EXE."
 
