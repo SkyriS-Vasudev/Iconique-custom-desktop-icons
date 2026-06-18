@@ -70,6 +70,7 @@ Switch between light and dark themes from the sidebar. Both modes are designed f
 2. Navigate to the Installers Folder and click on IconiqueSetup-1.0.0
 3. Run the installer — it will guide you through setup
 4. Launch **Iconique** from your Start Menu or Desktop
+5. Y'all don't panic if the cmd opens up that's how it is working my god :)
 
 > [!NOTE]
 > The installer bundles everything (Python runtime, frontend, theme packs). No additional software is required.
