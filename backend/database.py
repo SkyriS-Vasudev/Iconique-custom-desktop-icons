@@ -4,13 +4,20 @@ from datetime import datetime
 from backend.logging_config import logger
 
 def get_db_path():
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
+    workspace_db_dir = backend_dir
+
     appdata = os.getenv('APPDATA')
-    if not appdata:
-        appdata = os.path.join(os.path.expanduser('~'), 'AppData', 'Roaming')
-    
-    db_dir = os.path.join(appdata, 'Iconique')
-    os.makedirs(db_dir, exist_ok=True)
-    return os.path.join(db_dir, 'iconique.db')
+    if appdata:
+        db_dir = os.path.join(appdata, 'Iconique')
+        try:
+            os.makedirs(db_dir, exist_ok=True)
+            return os.path.join(db_dir, 'iconique.db')
+        except OSError:
+            logger.warning("AppData database directory is not writable; falling back to the workspace.")
+
+    os.makedirs(workspace_db_dir, exist_ok=True)
+    return os.path.join(workspace_db_dir, 'iconique.db')
 
 def get_connection():
     db_path = get_db_path()

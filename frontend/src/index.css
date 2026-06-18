@@ -1,111 +1,95 @@
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+  --bg-app: #0b1115;
+  --bg-sidebar: #0f161c;
+  --bg-card: #121b22;
+  --bg-card-hover: #17222a;
+  --bg-input: #0f171d;
+  --bg-modal: #10181f;
+  --border-color: #24313a;
+  --border-color-hover: #35505c;
+  --text-primary: #f3f8fb;
+  --text-secondary: #9eb2bb;
+  --text-muted: #6c808a;
+  --accent: #64f4ff;
+  --accent-secondary: #4dd0a8;
+  --success: #43d39e;
+  --danger: #ff6b6b;
+  --shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.18);
+  --shadow-md: 0 12px 30px rgba(0, 0, 0, 0.24);
+  --shadow-lg: 0 22px 44px rgba(0, 0, 0, 0.34);
+  --shadow-glow: 0 0 0 1px rgba(100, 244, 255, 0.18), 0 0 28px rgba(100, 244, 255, 0.12);
+  color-scheme: dark;
+  font-family:
+    'Segoe UI',
+    'Aptos',
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: var(--text-primary);
+  background:
+    radial-gradient(circle at top left, rgba(20, 184, 166, 0.12), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(96, 165, 250, 0.12), transparent 24%),
+    var(--bg-app);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+:root[data-theme='light'] {
+  --bg-app: #eef3f6;
+  --bg-sidebar: #f7fafc;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f7fbfd;
+  --bg-input: #f1f6f9;
+  --bg-modal: #ffffff;
+  --border-color: #d7e0e6;
+  --border-color-hover: #b8c8d2;
+  --text-primary: #10212b;
+  --text-secondary: #56707b;
+  --text-muted: #7a8f98;
+  --accent: #006fbf;
+  --accent-secondary: #0aa37f;
+  --success: #11815e;
+  --danger: #d64545;
+  --shadow-sm: 0 8px 24px rgba(18, 33, 43, 0.08);
+  --shadow-md: 0 12px 30px rgba(18, 33, 43, 0.12);
+  --shadow-lg: 0 22px 44px rgba(18, 33, 43, 0.16);
+  --shadow-glow: 0 0 0 1px rgba(0, 111, 191, 0.1), 0 0 28px rgba(0, 111, 191, 0.12);
+  color-scheme: light;
 }
 
-body {
-  margin: 0;
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+* {
   box-sizing: border-box;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
+html,
+body,
+#root {
+  min-height: 100%;
   margin: 0;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+body {
+  min-height: 100vh;
+  background: var(--bg-app);
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+button,
+input {
+  font: inherit;
+}
+
+button {
+  appearance: none;
+}
+
+img {
+  display: block;
+}
+
+a {
+  color: inherit;
 }

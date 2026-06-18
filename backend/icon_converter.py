@@ -2,12 +2,20 @@ import os
 from PIL import Image
 from backend.logging_config import logger
 
+def _workspace_root():
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 def get_assets_dir():
     appdata = os.getenv('APPDATA')
-    if not appdata:
-        appdata = os.path.join(os.path.expanduser('~'), 'AppData', 'Roaming')
-    
-    assets_dir = os.path.join(appdata, 'Iconique', 'assets')
+    if appdata:
+        assets_dir = os.path.join(appdata, 'Iconique', 'assets')
+        try:
+            os.makedirs(assets_dir, exist_ok=True)
+            return assets_dir
+        except OSError:
+            logger.warning("AppData assets directory is not writable; falling back to workspace assets.")
+
+    assets_dir = os.path.join(_workspace_root(), 'backend', 'assets')
     os.makedirs(assets_dir, exist_ok=True)
     return assets_dir
 

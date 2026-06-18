@@ -3,14 +3,28 @@ import logging
 import sys
 
 def setup_logging():
-    # Find AppData/Roaming path on Windows
+    # Prefer AppData, but fall back to the workspace when that location is not writable.
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
+    log_candidates = []
+
     appdata = os.getenv('APPDATA')
-    if not appdata:
-        appdata = os.path.join(os.path.expanduser('~'), 'AppData', 'Roaming')
-    
-    log_dir = os.path.join(appdata, 'Iconique', 'logs')
-    os.makedirs(log_dir, exist_ok=True)
-    
+    if appdata:
+        log_candidates.append(os.path.join(appdata, 'Iconique', 'logs'))
+
+    log_candidates.append(os.path.join(backend_dir, 'logs'))
+
+    log_dir = None
+    for candidate in log_candidates:
+        try:
+            os.makedirs(candidate, exist_ok=True)
+            log_dir = candidate
+            break
+        except OSError:
+            continue
+
+    if log_dir is None:
+        log_dir = backend_dir
+
     log_file = os.path.join(log_dir, 'iconique.log')
     
     # Configure logging

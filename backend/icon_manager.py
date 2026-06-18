@@ -7,22 +7,50 @@ from backend.logging_config import logger
 from backend.database import add_backup, get_backup, delete_backup, get_all_backups, add_history_entry
 
 def get_cache_dir():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     appdata = os.getenv('APPDATA')
-    if not appdata:
-        appdata = os.path.join(os.path.expanduser('~'), 'AppData', 'Roaming')
-    
-    cache_dir = os.path.join(appdata, 'Iconique', 'cache')
+    if appdata:
+        cache_dir = os.path.join(appdata, 'Iconique', 'cache')
+        try:
+            os.makedirs(cache_dir, exist_ok=True)
+            return cache_dir
+        except OSError:
+            logger.warning("AppData cache directory is not writable; falling back to workspace cache.")
+
+    cache_dir = os.path.join(base_dir, 'cache')
     os.makedirs(cache_dir, exist_ok=True)
     return cache_dir
 
 def get_backups_dir():
+    """
+    Resolve the active backup directory.
+
+    The default location is %APPDATA%/Iconique/backups. If the user changes the
+    backup location setting to "workspace", backups are stored inside the
+    repository under backend/backups. When APPDATA is unavailable, we fall back
+    to the workspace so the app still works in constrained environments.
+    """
+    from backend.database import get_setting
+
+    backup_location = get_setting("backupLocation", "appdata")
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    workspace_backups = os.path.join(base_dir, 'backups')
+
+    if backup_location == "workspace":
+        os.makedirs(workspace_backups, exist_ok=True)
+        return workspace_backups
+
     appdata = os.getenv('APPDATA')
-    if not appdata:
-        appdata = os.path.join(os.path.expanduser('~'), 'AppData', 'Roaming')
-    
-    backups_dir = os.path.join(appdata, 'Iconique', 'backups')
-    os.makedirs(backups_dir, exist_ok=True)
-    return backups_dir
+    if appdata:
+        backups_dir = os.path.join(appdata, 'Iconique', 'backups')
+        try:
+            os.makedirs(backups_dir, exist_ok=True)
+            return backups_dir
+        except OSError:
+            logger.warning("AppData backups directory is not writable; falling back to workspace backups.")
+
+    os.makedirs(workspace_backups, exist_ok=True)
+    return workspace_backups
 
 def run_powershell(script):
     logger.debug(f"Executing PowerShell Script:\n{script}")
@@ -113,7 +141,7 @@ def discover_shortcuts():
                         $isFolder = $true
                     }}
                     
-                    $shortcuts += [PSCustomObject]@{
+                    $shortcuts += [PSCustomObject]@{{
                         name = $name
                         path = $_.FullName
                         targetPath = $targetPath
@@ -121,7 +149,7 @@ def discover_shortcuts():
                         iconCachePath = $pngPath
                         extracted = $extracted
                         isFolder = $isFolder
-                    }
+                    }}
                 }} catch {{
                     # Continue silently on individual failure
                 }}
@@ -147,7 +175,10 @@ def discover_shortcuts():
         from backend.database import get_backup
         for s in shortcuts:
             bk = get_backup(s['path'])
-            s['isCustomized'] = bk is not None
+            backup_exists = bk is not None
+            s['isCustomized'] = backup_exists
+            s['backupExists'] = backup_exists
+            s['iconCacheUrl'] = f"/api/assets/cache/{os.path.basename(s['iconCachePath'])}"
             # Standardize path slashes for frontend
             s['iconCachePath'] = s['iconCachePath'].replace('\\', '/')
             s['path'] = s['path'].replace('\\', '/')
@@ -179,10 +210,10 @@ def apply_custom_icon(shortcut_path, custom_ico_path, action_type='applied_custo
     ps_read = f"""
     $shell = New-Object -ComObject WScript.Shell
     $lnk = $shell.CreateShortcut("{shortcut_path.replace('"', '`"')}")
-    [PSCustomObject]@{
+    [PSCustomObject]@{{
         TargetPath = $lnk.TargetPath
         IconLocation = $lnk.IconLocation
-    } | ConvertTo-Json
+    }} | ConvertTo-Json
     """
     
     success, stdout, _ = run_powershell(ps_read)
@@ -370,7 +401,10 @@ def create_desktop_shortcut_and_modify(exe_path, app_name, custom_ico_path):
         return False, "Failed to resolve Desktop folder location."
         
     desktop_dir = stdout.strip()
-    shortcut_path = os.path.join(desktop_dir, f"{app_name}.lnk")
+    safe_app_name = "".join([c if c.isalnum() or c in ['-', '_', ' '] else '_' for c in app_name]).strip()
+    if not safe_app_name:
+        safe_app_name = "New Shortcut"
+    shortcut_path = os.path.join(desktop_dir, f"{safe_app_name}.lnk")
     
     if os.path.exists(shortcut_path):
         logger.warning(f"Shortcut already exists: {shortcut_path}. Overwriting icon.")
