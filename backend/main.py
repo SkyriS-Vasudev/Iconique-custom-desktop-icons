@@ -4,6 +4,7 @@ import socket
 import threading
 import shutil
 import json
+import ctypes
 from urllib.parse import quote
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,7 +25,7 @@ from backend.icon_converter import convert_to_ico, generate_preview, get_assets_
 from backend.icon_manager import (
     discover_shortcuts, apply_custom_icon, restore_shortcut_icon, 
     restore_all_shortcuts, create_desktop_shortcut_and_modify,
-    get_cache_dir, get_backups_dir
+    get_cache_dir, get_backups_dir, discover_installed_apps
 )
 
 # Initialize database
@@ -243,19 +244,32 @@ def restore_all():
 def create_shortcut(
     exe_path: str = Form(...), 
     app_name: str = Form(...), 
-    ico_path: str = Form(...)
+    ico_path: str = Form(None)
 ):
     try:
-        # Ensure ICO is in a permanent location Windows can always access
-        theme_name = _extract_theme_name(ico_path)
-        ico_path = ensure_permanent_ico(ico_path, theme_name=theme_name)
+        # Ensure ICO is in a permanent location Windows can always access (if provided)
+        if ico_path:
+            theme_name = _extract_theme_name(ico_path)
+            ico_path = ensure_permanent_ico(ico_path, theme_name=theme_name)
 
-        success, msg = create_desktop_shortcut_and_modify(exe_path, app_name, ico_path)
+        success, msg, shortcut_path = create_desktop_shortcut_and_modify(exe_path, app_name, ico_path)
         if not success:
             raise HTTPException(status_code=400, detail=msg)
-        return {"success": True, "message": msg}
+        return {
+            "success": True, 
+            "message": msg,
+            "shortcutPath": shortcut_path.replace('\\', '/') if shortcut_path else None
+        }
     except Exception as e:
         logger.error(f"Create shortcut failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/apps/installed")
+def get_installed_apps():
+    try:
+        return discover_installed_apps()
+    except Exception as e:
+        logger.error(f"Error getting installed apps: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/themes")
@@ -284,6 +298,7 @@ def get_themes():
                 icon_entries = []
 
                 if meta.get("icons"):
+                    # Load explicitly mapped icons first
                     for app_name, icon_filename in meta.get("icons", {}).items():
                         icon_path = os.path.join(folder_path, icon_filename)
                         if os.path.exists(icon_path):
@@ -295,6 +310,23 @@ def get_themes():
                             }
                             resolved_icons[app_name] = icon_data
                             icon_entries.append(icon_data)
+                    
+                    # Scan and append any other unmapped .ico files in the folder
+                    mapped_filenames = set(meta.get("icons", {}).values())
+                    for icon_filename in sorted(os.listdir(folder_path)):
+                        if not icon_filename.lower().endswith(".ico"):
+                            continue
+                        if icon_filename in mapped_filenames:
+                            continue
+                        icon_path = os.path.join(folder_path, icon_filename)
+                        label = os.path.splitext(icon_filename)[0].replace('_', ' ').replace('-', ' ')
+                        icon_data = {
+                            "path": icon_path.replace('\\', '/'),
+                            "url": f"/api/assets/theme/{quote(folder_name)}/{quote(icon_filename)}",
+                            "label": label,
+                            "filename": icon_filename,
+                        }
+                        icon_entries.append(icon_data)
                 else:
                     for icon_filename in sorted(os.listdir(folder_path)):
                         if not icon_filename.lower().endswith(".ico"):
@@ -434,7 +466,24 @@ def find_free_port():
 def run_fastapi(port):
     uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning")
 
+_app_mutex = None
+
+def acquire_mutex():
+    global _app_mutex
+    if sys.platform == 'win32':
+        try:
+            kernel32 = ctypes.windll.kernel32
+            mutex_name = "Global\\IconiqueUniqueMutex"
+            _app_mutex = kernel32.CreateMutexW(None, True, mutex_name)
+            last_error = kernel32.GetLastError()
+            if last_error == 183:  # ERROR_ALREADY_EXISTS
+                logger.warning("Another instance of Iconique is already running. Exiting.")
+                sys.exit(0)
+        except Exception as e:
+            logger.warning(f"Could not create system mutex: {e}")
+
 def main():
+    acquire_mutex()
     logger.info("Starting Iconique desktop application...")
 
     if webview is None:

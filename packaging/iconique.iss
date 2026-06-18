@@ -21,6 +21,7 @@
 [Setup]
 SourceDir=..
 AppId={{0D7F1E5C-3F17-4B16-8DBD-5F0D0459C13C}}
+AppMutex=Global\IconiqueUniqueMutex
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
@@ -57,3 +58,9 @@ Name: "{autodesktop}\Iconique"; Filename: "{app}\{#MyAppExeName}"; Tasks: deskto
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch Iconique"; Flags: nowait postinstall skipifsilent
+
+[InstallDelete]
+Type: filesandordirs; Name: "{app}\_internal\Theme Packs\Studio Ghibli"
+Type: filesandordirs; Name: "{app}\_internal\Theme Packs\Minimalist"
+Type: filesandordirs; Name: "{app}\_internal\Theme Packs\Dark Academia"
+Type: filesandordirs; Name: "{app}\_internal\Theme Packs\Retro Gaming"

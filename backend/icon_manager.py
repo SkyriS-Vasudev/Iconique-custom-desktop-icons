@@ -376,16 +376,37 @@ def create_desktop_shortcut_and_modify(exe_path, app_name, custom_ico_path):
     Used when a user wants to customize an application that does not have a desktop shortcut.
     """
     exe_path = os.path.normpath(exe_path)
+    
+    # Check if a custom icon path is provided. If not, scan the existing theme packs for a dummy icon.
+    if not custom_ico_path or not os.path.exists(custom_ico_path):
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        themes_dir = os.path.join(base_dir, 'Theme Packs')
+        dummy_found = False
+        if os.path.exists(themes_dir):
+            for t_folder in sorted(os.listdir(themes_dir)):
+                t_path = os.path.join(themes_dir, t_folder)
+                if os.path.isdir(t_path) and t_folder != "Custom":
+                    for f in sorted(os.listdir(t_path)):
+                        if f.lower().endswith('.ico'):
+                            custom_ico_path = os.path.join(t_path, f)
+                            dummy_found = True
+                            break
+                if dummy_found:
+                    break
+        # Fallback to packaging/iconique.ico if still not found
+        if not custom_ico_path or not os.path.exists(custom_ico_path):
+            custom_ico_path = os.path.join(base_dir, 'packaging', 'iconique.ico')
+
     custom_ico_path = os.path.normpath(custom_ico_path)
     
     if not os.path.exists(exe_path):
-        return False, f"Target executable not found at: {exe_path}"
+        return False, f"Target executable not found at: {exe_path}", None
         
     # Get user desktop directory
     ps_get_desktop = "[Environment]::GetFolderPath([Environment+SpecialFolder]::Desktop)"
     success, stdout, _ = run_powershell(ps_get_desktop)
     if not success or not stdout.strip():
-        return False, "Failed to resolve Desktop folder location."
+        return False, "Failed to resolve Desktop folder location.", None
         
     desktop_dir = stdout.strip()
     safe_app_name = "".join([c if c.isalnum() or c in ['-', '_', ' '] else '_' for c in app_name]).strip()
@@ -407,7 +428,63 @@ def create_desktop_shortcut_and_modify(exe_path, app_name, custom_ico_path):
     
     success, _, stderr = run_powershell(ps_create)
     if not success:
-        return False, f"Failed to create desktop shortcut: {stderr}"
+        return False, f"Failed to create desktop shortcut: {stderr}", None
         
     # Apply custom icon to the newly created shortcut
-    return apply_custom_icon(shortcut_path, custom_ico_path, action_type='applied_custom')
+    success, msg = apply_custom_icon(shortcut_path, custom_ico_path, action_type='applied_custom')
+    return success, msg, shortcut_path
+
+def discover_installed_apps():
+    """
+    Scans the Start Menu (both User and Common) recursively for .lnk files,
+    resolves their targets, and returns unique apps that point to a valid .exe.
+    """
+    logger.info("Scanning Start Menu directories for installed applications...")
+    
+    ps_script = """
+    $shell = New-Object -ComObject WScript.Shell
+    $userStart = [Environment]::GetFolderPath([Environment+SpecialFolder]::StartMenu)
+    $commonStart = [Environment]::GetFolderPath([Environment+SpecialFolder]::CommonStartMenu)
+    $dirs = @($userStart, $commonStart)
+    $apps = @()
+    
+    foreach ($dir in $dirs) {
+        if (Test-Path $dir) {
+            Get-ChildItem -Path $dir -Filter *.lnk -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
+                try {
+                    $lnk = $shell.CreateShortcut($_.FullName)
+                    $target = $lnk.TargetPath
+                    if ($target -and $target.EndsWith(".exe") -and (Test-Path $target)) {
+                        $apps += [PSCustomObject]@{
+                            name = $_.BaseName
+                            path = $target
+                        }
+                    }
+                } catch {}
+            }
+        }
+    }
+    # Return unique by path
+    $apps | Group-Object path | ForEach-Object { $_.Group[0] } | ConvertTo-Json
+    """
+    
+    success, stdout, stderr = run_powershell(ps_script)
+    if not success or not stdout.strip():
+        logger.warning("No installed apps found via Start Menu scan.")
+        return []
+        
+    try:
+        apps = json.loads(stdout)
+        if not isinstance(apps, list):
+            apps = [apps]
+        # Standardize paths
+        for a in apps:
+            a['path'] = a['path'].replace('\\', '/')
+        # Sort by name
+        apps.sort(key=lambda x: x.get('name', '').lower())
+        logger.info(f"Discovered {len(apps)} installed apps from Start Menu.")
+        return apps
+    except Exception as e:
+        logger.error(f"Failed to parse installed apps json: {e}")
+        return []
+

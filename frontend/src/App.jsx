@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react'
 import './App.css'
+import heroIcon from './assets/hero.png'
 
 const DEFAULT_SETTINGS = {
   themeMode: 'dark',
@@ -77,6 +78,7 @@ function App() {
     iconPreview: '',
     iconLabel: '',
   })
+  const [installedApps, setInstalledApps] = useState([])
 
   const selectedShortcut = shortcuts.find((item) => item.path === selectedShortcutPath) || shortcuts[0] || null
 
@@ -132,6 +134,15 @@ function App() {
     }
   }, [fetchJson])
 
+  const loadInstalledApps = useCallback(async () => {
+    try {
+      const data = await fetchJson('/api/apps/installed')
+      setInstalledApps(data || [])
+    } catch {
+      setInstalledApps([])
+    }
+  }, [fetchJson])
+
   useEffect(() => {
     let active = true
     const bootstrap = async () => {
@@ -166,6 +177,11 @@ function App() {
         const themesData = await fetchJson('/api/themes')
         if (active) {
           setThemes(themesData)
+        }
+
+        const appsData = await fetchJson('/api/apps/installed')
+        if (active) {
+          setInstalledApps(appsData || [])
         }
       } catch (error) {
         if (active) flash(`Could not load Iconique data: ${error.message}`, 'error')
@@ -236,7 +252,7 @@ function App() {
   async function refreshData() {
     setBusy(true)
     try {
-      await Promise.all([loadShortcuts(), loadThemes()])
+      await Promise.all([loadShortcuts(), loadThemes(), loadInstalledApps()])
       if (settings.autoScanCommonApps) {
         await loadCommonApps()
       }
@@ -318,15 +334,19 @@ function App() {
   }
 
   async function createShortcut() {
-    if (!shortcutForm.exePath || !shortcutForm.appName || !shortcutForm.iconPath) {
-      flash('Pick an EXE, choose a name, and upload an icon first.', 'error')
+    if (!shortcutForm.exePath || !shortcutForm.appName) {
+      flash('Pick an application first.', 'error')
       return
     }
+
+    const activeIconPath = preview?.icoPath || shortcutForm.iconPath || ''
 
     const formData = new FormData()
     formData.append('exe_path', shortcutForm.exePath)
     formData.append('app_name', shortcutForm.appName)
-    formData.append('ico_path', shortcutForm.iconPath)
+    if (activeIconPath) {
+      formData.append('ico_path', activeIconPath)
+    }
 
     setBusy(true)
     try {
@@ -344,6 +364,9 @@ function App() {
         iconLabel: '',
       })
       await refreshData()
+      if (result.shortcutPath) {
+        setSelectedShortcutPath(result.shortcutPath)
+      }
     } catch (error) {
       flash(error.message, 'error')
     } finally {
@@ -438,43 +461,80 @@ function App() {
 
   const currentPreview = selectedShortcutPreview || ''
   const pendingPreview = preview?.iconUrl || ''
+
   return (
-    <div className="app-shell no-sidebar">
-      {/* Sleek Top Navbar */}
-      <header className="navbar">
+    <div className="app-shell">
+      {/* Sidebar on the Left */}
+      <aside className="sidebar">
         <div className="brand-block">
           <div className="brand-mark">
-            <svg width="20" height="20" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M16 2L30 9V23L16 30L2 23V9L16 2Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M16 8V24" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round"/>
-              <path d="M11 11H21" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-              <path d="M11 21H21" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-            </svg>
+            <img src={heroIcon} alt="Iconique" className="navbar-brand-icon" />
           </div>
           <div>
             <div className="brand-title">Iconique</div>
-            <div className="brand-subtitle">Desktop personalization dashboard</div>
+            <div className="brand-subtitle">Desktop personalization</div>
           </div>
         </div>
 
-        <div className="navbar-controls">
-          <label className="toggle-row-compact">
-            <span>Auto-scan apps</span>
-            <input
-              type="checkbox"
-              checked={settings.autoScanCommonApps}
-              onChange={(event) => persistSettings({ autoScanCommonApps: event.target.checked })}
-            />
-          </label>
-
-          <button type="button" className="button button-secondary button-compact" onClick={refreshData} disabled={busy}>
-            <RefreshCw size={14} className={busy ? 'spin' : ''} />
-            Refresh
-          </button>
+        <div className="sidebar-group">
+          <span className="sidebar-heading">Appearance</span>
+          <div className="segmented-control">
+            <button
+              type="button"
+              className={settings.themeMode === 'light' ? 'segmented active' : 'segmented'}
+              onClick={() => persistSettings({ themeMode: 'light' })}
+            >
+              <SunMedium size={14} />
+              Light
+            </button>
+            <button
+              type="button"
+              className={settings.themeMode === 'dark' ? 'segmented active' : 'segmented'}
+              onClick={() => persistSettings({ themeMode: 'dark' })}
+            >
+              <Moon size={14} />
+              Dark
+            </button>
+          </div>
         </div>
-      </header>
+
+        <div className="sidebar-group stats-sidebar-group">
+          <span className="sidebar-heading">Statistics</span>
+          <div className="sidebar-stats-grid">
+            {stats.map((stat) => (
+              <div className="sidebar-stat-card" key={stat.label}>
+                <strong>{stat.value}</strong>
+                <small>{stat.label}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+      </aside>
 
       <main className="workspace-fluid">
+        {/* Sleek Top Navbar */}
+        <header className="navbar">
+          <div className="navbar-welcome">
+            <h3>Personalization Dashboard</h3>
+          </div>
+
+          <div className="navbar-controls">
+            <label className="toggle-row-compact">
+              <span>Auto-scan apps</span>
+              <input
+                type="checkbox"
+                checked={settings.autoScanCommonApps}
+                onChange={(event) => persistSettings({ autoScanCommonApps: event.target.checked })}
+              />
+            </label>
+
+            <button type="button" className="button button-secondary button-compact" onClick={refreshData} disabled={busy}>
+              <RefreshCw size={14} className={busy ? 'spin' : ''} />
+              Refresh
+            </button>
+          </div>
+        </header>
+
         {/* Upper Split Grid: Selected Shortcut on the Left, Themes on the Right */}
         <div className="upper-split-grid">
           {/* Left Column: Active Selection & Preview */}
@@ -655,6 +715,78 @@ function App() {
               </div>
             )}
           </div>
+        </section>
+
+        {/* Create Desktop Shortcut pane at the bottom */}
+        <section className="pane-card create-shortcut-pane">
+          <div className="pane-header-compact">
+            <div className="pane-title-group">
+              <h4>Create desktop shortcut</h4>
+              <span>Choose an application from your library, select a theme icon from the list above, and create a shortcut</span>
+            </div>
+          </div>
+
+          <form className="create-shortcut-form" onSubmit={(e) => { e.preventDefault(); createShortcut(); }}>
+            <div className="form-grid-horizontal">
+              <div className="form-group">
+                <label>Select Application</label>
+                <select
+                  value={shortcutForm.exePath}
+                  onChange={(e) => {
+                    const selectedPath = e.target.value
+                    const app = installedApps.find((a) => a.path === selectedPath)
+                    setShortcutForm((prev) => ({
+                      ...prev,
+                      exePath: selectedPath,
+                      appName: app ? app.name : '',
+                    }))
+                  }}
+                  required
+                >
+                  <option value="">-- Choose Application --</option>
+                  {installedApps.map((app) => (
+                    <option key={app.path} value={app.path}>
+                      {app.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Shortcut Name</label>
+                <input
+                  type="text"
+                  placeholder="App Name"
+                  value={shortcutForm.appName}
+                  onChange={(e) => setShortcutForm((prev) => ({ ...prev, appName: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Selected Theme Icon</label>
+                <div className="selected-icon-preview-box">
+                  {preview?.iconUrl ? (
+                    <div className="mini-icon-frame">
+                      <img src={preview.iconUrl} alt="Selected" />
+                      <span>{preview.title}</span>
+                    </div>
+                  ) : (
+                    <span className="no-icon-selected-text">Choose any theme icon above first</span>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="button button-primary create-btn"
+                disabled={busy || !shortcutForm.exePath || !shortcutForm.appName}
+              >
+                <Sparkles size={14} />
+                Create Shortcut
+              </button>
+            </div>
+          </form>
         </section>
       </main>
 

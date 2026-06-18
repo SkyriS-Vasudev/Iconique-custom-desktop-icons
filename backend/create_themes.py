@@ -95,33 +95,6 @@ def create_themes():
             "shape": "cyber_shield"
         },
         {
-            "name": "Minimalist",
-            "author": "SleekDesigns",
-            "description": "Pure black and white flat icons for clean workspaces.",
-            "category": "Minimalist",
-            "bg_color": (245, 245, 247, 255),  # Off-white
-            "fg_color": (20, 20, 20, 255),     # Dark gray
-            "shape": "rounded_rect"
-        },
-        {
-            "name": "Retro Gaming",
-            "author": "ArcadeHero",
-            "description": "8-bit inspired grid layouts and pixel styling.",
-            "category": "Retro",
-            "bg_color": (16, 0, 43, 255),      # Deep purple
-            "fg_color": (255, 190, 11, 255),    # Golden yellow
-            "shape": "pixel_box"
-        },
-        {
-            "name": "Studio Ghibli",
-            "author": "NatureChild",
-            "description": "Soft pastel tones and organic rounded designs.",
-            "category": "Pastel",
-            "bg_color": (204, 227, 222, 255),   # Sage green
-            "fg_color": (118, 146, 140, 255),   # Dark sage
-            "shape": "circle"
-        },
-        {
             "name": "Pokemon",
             "author": "PalletTown",
             "description": "Gotta custom 'em all! Pokéball themed styling.",
@@ -129,15 +102,6 @@ def create_themes():
             "bg_color": (230, 57, 70, 255),     # Red
             "fg_color": (241, 250, 238, 255),    # White
             "shape": "circle"
-        },
-        {
-            "name": "Dark Academia",
-            "author": "OxfordScholar",
-            "description": "Rich mahogany tones, leather textures, and brass trims.",
-            "category": "Vintage",
-            "bg_color": (44, 34, 30, 255),      # Dark brown
-            "fg_color": (224, 169, 109, 255),   # Warm gold
-            "shape": "rounded_rect"
         }
     ]
     
